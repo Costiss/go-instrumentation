@@ -1,0 +1,40 @@
+version: '3.8'
+
+volumes:
+  prom_data:
+
+services:
+  goapi:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - OTEL_ENDPOINT=jaeger:4317
+    depends_on:
+      - prometheus
+      - jaeger
+
+  # http://localhost:16686/#/
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+       - "16686:16686"
+       - "4318:4318"
+       - "4317:4317"
+    
+  
+
+  # http://localhost:9090
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+    volumes:
+      - ./telemetry/prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    ports:
+      - "9090:9090"
+
